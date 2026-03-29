@@ -103,7 +103,7 @@ const Home = () => {
             <motion.button
               whileHover={{ scale: 1.05, boxShadow: '0 0 25px rgba(250, 204, 21, 0.5)' }}
               whileTap={{ scale: 0.95 }}
-              onClick={() => navigate('/register')}
+              onClick={() => navigate('/search')}
               className="px-8 py-4 bg-yellow-400 text-black font-bold rounded-full text-lg hover:bg-yellow-300 transition duration-300"
             >
               🔍 Find a Lawyer
@@ -163,6 +163,38 @@ const Home = () => {
             <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{feature.desc}</p>
           </motion.div>
         ))}
+      </div>
+
+      {/* How It Works Section */}
+      <div className="relative z-10 px-10 py-16 max-w-6xl mx-auto">
+        <motion.h2
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-4xl font-extrabold text-center mb-16"
+        >
+          How It <span className="text-yellow-400">Works</span>
+        </motion.h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { step: '01', icon: '📝', title: 'Create Account', desc: 'Sign up as a client or legal advisor in just 2 minutes' },
+            { step: '02', icon: '🔍', title: 'Find Your Lawyer', desc: 'Search and filter lawyers by specialization, city and language' },
+            { step: '03', icon: '💬', title: 'Get Legal Help', desc: 'Connect, chat and resolve your legal issues easily' },
+          ].map((item, index) => (
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: index * 0.3 }}
+              whileHover={{ scale: 1.05 }}
+              className={`relative border rounded-2xl p-8 text-center transition duration-300 ${darkMode ? 'bg-gray-900 border-gray-800 hover:border-yellow-400' : 'bg-gray-100 border-gray-200 hover:border-yellow-400'}`}
+            >
+              <div className="text-5xl font-extrabold text-yellow-400 opacity-20 absolute top-4 right-4">{item.step}</div>
+              <div className="text-5xl mb-4">{item.icon}</div>
+              <h3 className="text-xl font-bold mb-2">{item.title}</h3>
+              <p className={darkMode ? 'text-gray-400' : 'text-gray-600'}>{item.desc}</p>
+            </motion.div>
+          ))}
+        </div>
       </div>
 
       {/* CTA Section */}

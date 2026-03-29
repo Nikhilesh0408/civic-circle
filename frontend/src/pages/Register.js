@@ -1,5 +1,5 @@
 import React, { useState, useContext } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ThemeContext } from '../App';
@@ -8,7 +8,17 @@ const Register = () => {
   const navigate = useNavigate();
   const { darkMode, setDarkMode } = useContext(ThemeContext);
   const [role, setRole] = useState('client');
-  const [formData, setFormData] = useState({ name: '', email: '', password: '', phone: '' });
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    password: '',
+    phone: '',
+    specialization: '',
+    city: '',
+    bio: '',
+    experience_duration: '',
+    languages_known: '',
+  });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -30,8 +40,10 @@ const Register = () => {
     setLoading(false);
   };
 
+  const inputClass = `px-4 py-3 rounded-xl border focus:outline-none focus:border-yellow-400 transition duration-300 ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`;
+
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center px-4 transition-all duration-500`}>
+    <div className={`min-h-screen ${darkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center px-4 py-10 transition-all duration-500`}>
 
       {/* Animated Background */}
       <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
@@ -56,7 +68,7 @@ const Register = () => {
         initial={{ opacity: 0, y: 50 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.8 }}
-        className={`relative z-10 border rounded-2xl p-10 w-full max-w-md ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
+        className={`relative z-10 border rounded-2xl p-10 w-full max-w-lg ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
       >
         {/* Theme Toggle */}
         <div className="flex justify-end mb-4">
@@ -89,37 +101,65 @@ const Register = () => {
         {error && <p className="text-red-400 text-center mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={formData.name}
+          {/* Common Fields */}
+          <input type="text" placeholder="Full Name" value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className={`px-4 py-3 rounded-xl border focus:outline-none focus:border-yellow-400 ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
-            required
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
+            className={inputClass} required />
+
+          <input type="email" placeholder="Email" value={formData.email}
             onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className={`px-4 py-3 rounded-xl border focus:outline-none focus:border-yellow-400 ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={formData.password}
+            className={inputClass} required />
+
+          <input type="password" placeholder="Password" value={formData.password}
             onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className={`px-4 py-3 rounded-xl border focus:outline-none focus:border-yellow-400 ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
-            required
-          />
-          <input
-            type="text"
-            placeholder="Phone Number"
-            value={formData.phone}
+            className={inputClass} required />
+
+          <input type="text" placeholder="Phone Number" value={formData.phone}
             onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-            className={`px-4 py-3 rounded-xl border focus:outline-none focus:border-yellow-400 ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
-          />
+            className={inputClass} />
+
+          {/* Extra Fields for Legal Advisor */}
+          <AnimatePresence>
+            {role === 'advisor' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.4 }}
+                className="flex flex-col gap-4 overflow-hidden"
+              >
+                <div className={`border-t pt-4 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                  <p className="text-yellow-400 font-semibold mb-3">⚖️ Professional Details</p>
+                </div>
+
+                <input type="text" placeholder="Specialization (e.g. Criminal Law, Civil Law)"
+                  value={formData.specialization}
+                  onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
+                  className={inputClass} required />
+
+                <input type="text" placeholder="City (e.g. Mumbai, Delhi, Bangalore)"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  className={inputClass} required />
+
+                <input type="text" placeholder="Experience Duration (e.g. 5 years, 6 months)"
+                  value={formData.experience_duration}
+                  onChange={(e) => setFormData({ ...formData, experience_duration: e.target.value })}
+                  className={inputClass} />
+
+                <input type="text" placeholder="Languages Known (e.g. English, Hindi, Kannada)"
+                  value={formData.languages_known}
+                  onChange={(e) => setFormData({ ...formData, languages_known: e.target.value })}
+                  className={inputClass} />
+
+                <textarea placeholder="Bio — Tell clients about yourself..."
+                  value={formData.bio}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  rows={3}
+                  className={`${inputClass} resize-none`} />
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <motion.button
             whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(250,204,21,0.4)' }}
@@ -128,7 +168,7 @@ const Register = () => {
             disabled={loading}
             className="bg-yellow-400 text-black font-bold py-3 rounded-xl hover:bg-yellow-300 transition duration-300"
           >
-            {loading ? 'Registering...' : 'Register'}
+            {loading ? 'Registering...' : `Register as ${role === 'client' ? 'Client' : 'Legal Advisor'}`}
           </motion.button>
         </form>
 

@@ -19,6 +19,9 @@ const supabase = createClient(
 const authRoutes = require('./routes/authRoutes');
 app.use('/api/auth', authRoutes);
 
+const lawyerRoutes = require('./routes/lawyerRoutes');
+app.use('/api/lawyers', lawyerRoutes);
+
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'Civic Circle API is running 🚀' });

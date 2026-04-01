@@ -19,6 +19,8 @@ const Register = () => {
     experience_duration: '',
     languages_known: '',
   });
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [barCertificate, setBarCertificate] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +31,21 @@ const Register = () => {
       const url = role === 'client'
         ? 'http://localhost:5000/api/auth/register/client'
         : 'http://localhost:5000/api/auth/register/advisor';
-      const res = await axios.post(url, { ...formData });
+
+      let res;
+      if (role === 'advisor') {
+        // Use FormData for file uploads
+        const data = new FormData();
+        Object.keys(formData).forEach(key => data.append(key, formData[key]));
+        if (profilePhoto) data.append('profile_photo', profilePhoto);
+        if (barCertificate) data.append('bar_certificate', barCertificate);
+        res = await axios.post(url, data, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        res = await axios.post(url, formData);
+      }
+
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       alert('Registration Successful!');
@@ -101,7 +117,6 @@ const Register = () => {
         {error && <p className="text-red-400 text-center mb-4">{error}</p>}
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Common Fields */}
           <input type="text" placeholder="Full Name" value={formData.name}
             onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             className={inputClass} required />
@@ -132,22 +147,22 @@ const Register = () => {
                   <p className="text-yellow-400 font-semibold mb-3">⚖️ Professional Details</p>
                 </div>
 
-                <input type="text" placeholder="Specialization (e.g. Criminal Law, Civil Law)"
+                <input type="text" placeholder="Specialization (e.g. Criminal Law)"
                   value={formData.specialization}
                   onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
                   className={inputClass} required />
 
-                <input type="text" placeholder="City (e.g. Mumbai, Delhi, Bangalore)"
+                <input type="text" placeholder="City (e.g. Mumbai, Delhi)"
                   value={formData.city}
                   onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                   className={inputClass} required />
 
-                <input type="text" placeholder="Experience Duration (e.g. 5 years, 6 months)"
+                <input type="text" placeholder="Experience Duration (e.g. 5 years)"
                   value={formData.experience_duration}
                   onChange={(e) => setFormData({ ...formData, experience_duration: e.target.value })}
                   className={inputClass} />
 
-                <input type="text" placeholder="Languages Known (e.g. English, Hindi, Kannada)"
+                <input type="text" placeholder="Languages Known (e.g. English, Hindi)"
                   value={formData.languages_known}
                   onChange={(e) => setFormData({ ...formData, languages_known: e.target.value })}
                   className={inputClass} />
@@ -157,6 +172,35 @@ const Register = () => {
                   onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
                   rows={3}
                   className={`${inputClass} resize-none`} />
+
+                <div className={`border-t pt-4 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                  <p className="text-yellow-400 font-semibold mb-3">📎 Upload Documents</p>
+                </div>
+
+                {/* Profile Photo Upload */}
+                <div className={`border-2 border-dashed rounded-xl p-4 text-center ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                  <p className={`mb-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>📸 Profile Photo</p>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setProfilePhoto(e.target.files[0])}
+                    className="w-full text-sm text-gray-400"
+                  />
+                  {profilePhoto && <p className="text-green-400 text-xs mt-1">✅ {profilePhoto.name}</p>}
+                </div>
+
+                {/* Bar Certificate Upload */}
+                <div className={`border-2 border-dashed rounded-xl p-4 text-center ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+                  <p className={`mb-2 text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>📄 Bar Council Certificate</p>
+                  <input
+                    type="file"
+                    accept=".pdf,image/*"
+                    onChange={(e) => setBarCertificate(e.target.files[0])}
+                    className="w-full text-sm text-gray-400"
+                  />
+                  {barCertificate && <p className="text-green-400 text-xs mt-1">✅ {barCertificate.name}</p>}
+                </div>
+
               </motion.div>
             )}
           </AnimatePresence>

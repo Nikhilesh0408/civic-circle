@@ -12,7 +12,6 @@ const supabase = createClient(
 const registerClient = async (req, res) => {
   const { name, email, password, phone } = req.body;
   try {
-    // Check if email already exists
     const { data: existingClient } = await supabase
       .from('clients')
       .select('*')
@@ -23,10 +22,8 @@ const registerClient = async (req, res) => {
       return res.status(400).json({ message: 'Email already registered!' });
     }
 
-    // Encrypt password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Save to database
     const { data, error } = await supabase
       .from('clients')
       .insert([{ name, email, password: hashedPassword, phone }])
@@ -34,7 +31,6 @@ const registerClient = async (req, res) => {
 
     if (error) throw error;
 
-    // Create token
     const token = jwt.sign(
       { id: data[0].id, role: 'client' },
       process.env.JWT_SECRET,
@@ -47,6 +43,7 @@ const registerClient = async (req, res) => {
       user: { id: data[0].id, name: data[0].name, email: data[0].email, role: 'client' }
     });
   } catch (error) {
+    console.error('❌ Register Client Error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
@@ -55,6 +52,9 @@ const registerClient = async (req, res) => {
 const registerAdvisor = async (req, res) => {
   const { name, email, password, phone, specialization, city, bio, experience_duration, languages_known } = req.body;
   try {
+    console.log('📝 Register Advisor Request:', req.body);
+    console.log('📁 Files:', req.files);
+
     const { data: existingAdvisor } = await supabase
       .from('legal_advisors')
       .select('*')
@@ -67,12 +67,31 @@ const registerAdvisor = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    let profile_photo = '';
+    let bar_certificate = '';
+
+    if (req.files) {
+      if (req.files.profile_photo) {
+        profile_photo = req.files.profile_photo[0].path;
+      }
+      if (req.files.bar_certificate) {
+        bar_certificate = req.files.bar_certificate[0].path;
+      }
+    }
+
     const { data, error } = await supabase
       .from('legal_advisors')
-      .insert([{ name, email, password: hashedPassword, phone, specialization, city, bio, experience_duration, languages_known }])
+      .insert([{
+        name, email, password: hashedPassword, phone,
+        specialization, city, bio, experience_duration,
+        languages_known, profile_photo, bar_certificate
+      }])
       .select();
 
-    if (error) throw error;
+    if (error) {
+      console.error('❌ Supabase Insert Error:', error);
+      throw error;
+    }
 
     const token = jwt.sign(
       { id: data[0].id, role: 'advisor' },
@@ -86,11 +105,12 @@ const registerAdvisor = async (req, res) => {
       user: { id: data[0].id, name: data[0].name, email: data[0].email, role: 'advisor' }
     });
   } catch (error) {
+    console.error('❌ Register Advisor Error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-// LOGIN - FOR BOTH CLIENT AND ADVISOR
+// LOGIN
 const login = async (req, res) => {
   const { email, password, role } = req.body;
   try {
@@ -123,6 +143,7 @@ const login = async (req, res) => {
       user: { id: user.id, name: user.name, email: user.email, role }
     });
   } catch (error) {
+    console.error('❌ Login Error:', error);
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };

@@ -13,7 +13,7 @@ const getLawyers = async (req, res) => {
 
     let query = supabase
       .from('legal_advisors')
-      .select('id, name, email, phone, specialization, city, bio, experience_duration, languages_known, is_verified');
+      .select('id, name, email, phone, specialization, city, bio, experience_duration, languages_known, is_verified, profile_photo, bar_certificate');
 
     if (specialization) {
       query = query.ilike('specialization', `%${specialization}%`);
@@ -44,7 +44,7 @@ const getLawyerById = async (req, res) => {
 
     const { data, error } = await supabase
       .from('legal_advisors')
-      .select('id, name, email, phone, specialization, city, bio, experience_duration, languages_known, is_verified')
+      .select('id, name, email, phone, specialization, city, bio, experience_duration, languages_known, is_verified, profile_photo, bar_certificate')
       .eq('id', id)
       .single();
 

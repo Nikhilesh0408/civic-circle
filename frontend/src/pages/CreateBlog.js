@@ -11,8 +11,9 @@ const CreateBlog = () => {
     title: '',
     content: '',
     category: '',
-    image_url: '',
   });
+  const [image, setImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -23,15 +24,29 @@ const CreateBlog = () => {
     return null;
   }
 
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImage(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await axios.post('http://localhost:5000/api/blogs/create', {
-        ...formData,
-        author_name: user.name,
-        author_id: user.id,
-        author_role: user.role,
+      const data = new FormData();
+      data.append('title', formData.title);
+      data.append('content', formData.content);
+      data.append('category', formData.category);
+      data.append('author_name', user.name);
+      data.append('author_id', user.id);
+      data.append('author_role', user.role);
+      if (image) data.append('blog_image', image);
+
+      await axios.post('http://localhost:5000/api/blogs/create', data, {
+        headers: { 'Content-Type': 'multipart/form-data' }
       });
       alert('Blog published successfully!');
       navigate('/blogs');
@@ -123,13 +138,27 @@ const CreateBlog = () => {
               <option value="General">General</option>
             </select>
 
-            <input
-              type="text"
-              placeholder="Image URL (optional)"
-              value={formData.image_url}
-              onChange={(e) => setFormData({ ...formData, image_url: e.target.value })}
-              className={inputClass}
-            />
+            {/* Image Upload */}
+            <div className={`border-2 border-dashed rounded-xl p-4 ${darkMode ? 'border-gray-700' : 'border-gray-300'}`}>
+              <p className={`text-sm mb-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+                🖼️ Blog Cover Image (optional)
+              </p>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageChange}
+                className="w-full text-sm text-gray-400"
+              />
+              {imagePreview && (
+                <motion.img
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  src={imagePreview}
+                  alt="Preview"
+                  className="mt-3 w-full h-48 object-cover rounded-xl border-2 border-yellow-400"
+                />
+              )}
+            </div>
 
             <textarea
               placeholder="Write your blog content here..."

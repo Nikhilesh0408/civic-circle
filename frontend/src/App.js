@@ -9,6 +9,7 @@ import ClientDashboard from './pages/ClientDashboard';
 import AdvisorDashboard from './pages/AdvisorDashboard';
 import Blogs from './pages/Blogs';
 import CreateBlog from './pages/CreateBlog';
+import BlogDetail from './pages/BlogDetail';
 
 export const ThemeContext = React.createContext();
 
@@ -29,6 +30,7 @@ function App() {
             <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
             <Route path="/blogs" element={<Blogs />} />
             <Route path="/blogs/create" element={<CreateBlog />} />
+            <Route path="/blogs/:id" element={<BlogDetail />} />
           </Routes>
         </Router>
       </div>

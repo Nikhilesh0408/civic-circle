@@ -5,6 +5,10 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import SearchLawyers from './pages/SearchLawyers';
 import LawyerProfile from './pages/LawyerProfile';
+import ClientDashboard from './pages/ClientDashboard';
+import AdvisorDashboard from './pages/AdvisorDashboard';
+import Blogs from './pages/Blogs';
+import CreateBlog from './pages/CreateBlog';
 
 export const ThemeContext = React.createContext();
 
@@ -21,6 +25,10 @@ function App() {
             <Route path="/register" element={<Register />} />
             <Route path="/search" element={<SearchLawyers />} />
             <Route path="/lawyer/:id" element={<LawyerProfile />} />
+            <Route path="/client-dashboard" element={<ClientDashboard />} />
+            <Route path="/advisor-dashboard" element={<AdvisorDashboard />} />
+            <Route path="/blogs" element={<Blogs />} />
+            <Route path="/blogs/create" element={<CreateBlog />} />
           </Routes>
         </Router>
       </div>

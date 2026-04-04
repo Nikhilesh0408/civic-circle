@@ -19,7 +19,11 @@ const Login = () => {
       localStorage.setItem('token', res.data.token);
       localStorage.setItem('user', JSON.stringify(res.data.user));
       alert('Login Successful!');
-      navigate('/');
+      if (res.data.user.role === 'client') {
+  navigate('/client-dashboard');
+} else {
+  navigate('/advisor-dashboard');
+}
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed!');
     }

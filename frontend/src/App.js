@@ -10,6 +10,7 @@ import AdvisorDashboard from './pages/AdvisorDashboard';
 import Blogs from './pages/Blogs';
 import CreateBlog from './pages/CreateBlog';
 import BlogDetail from './pages/BlogDetail';
+import AIChatbot from './components/AIChatbot';
 
 export const ThemeContext = React.createContext();
 
@@ -32,6 +33,8 @@ function App() {
             <Route path="/blogs/create" element={<CreateBlog />} />
             <Route path="/blogs/:id" element={<BlogDetail />} />
           </Routes>
+          {/* AI Chatbot appears on every page */}
+          <AIChatbot />
         </Router>
       </div>
     </ThemeContext.Provider>

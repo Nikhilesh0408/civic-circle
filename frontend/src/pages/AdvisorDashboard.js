@@ -1,33 +1,62 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { ThemeContext } from '../App';
 
 const AdvisorDashboard = () => {
   const navigate = useNavigate();
   const { darkMode, setDarkMode } = useContext(ThemeContext);
   const [user, setUser] = useState(null);
+  const [profileData, setProfileData] = useState(null);
+  const [reviewStats, setReviewStats] = useState({ avgRating: 0, totalReviews: 0 });
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      navigate('/login');
-      return;
-    }
+    if (!storedUser) { navigate('/login'); return; }
     const parsedUser = JSON.parse(storedUser);
-    if (parsedUser.role !== 'advisor') {
-      navigate('/login');
-      return;
-    }
+    if (parsedUser.role !== 'advisor') { navigate('/login'); return; }
     setUser(parsedUser);
+
+    const fetchData = async () => {
+      try {
+        // Fetch profile photo
+        const profileRes = await axios.get(`http://localhost:5000/api/lawyers/${parsedUser.id}`);
+        setProfileData(profileRes.data.lawyer);
+
+        // ✅ Fetch review stats for dashboard
+        const reviewRes = await axios.get(`http://localhost:5000/api/reviews/${parsedUser.id}`);
+        setReviewStats({
+          avgRating: reviewRes.data.avgRating,
+          totalReviews: reviewRes.data.totalReviews,
+        });
+      } catch (error) {
+        console.error('Error fetching advisor data:', error);
+      }
+    };
+    fetchData();
   }, [navigate]);
 
-const handleLogout = () => {
+  const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       navigate('/');
     }
+  };
+
+  // ✅ Avatar with photo support
+  const AdvisorAvatar = () => {
+    const [imgError, setImgError] = useState(false);
+    const photo = profileData?.profile_photo;
+    if (photo && !imgError) {
+      return <img src={photo} alt={user?.name} className="w-20 h-20 rounded-full object-cover shadow-lg flex-shrink-0" onError={() => setImgError(true)} />;
+    }
+    return (
+      <div className="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center text-black text-3xl font-bold flex-shrink-0">
+        {user?.name ? user.name[0].toUpperCase() : '?'}
+      </div>
+    );
   };
 
   if (!user) return null;
@@ -41,13 +70,7 @@ const handleLogout = () => {
           <motion.div
             key={i}
             className={`absolute rounded-full ${darkMode ? 'bg-yellow-400' : 'bg-gray-800'}`}
-            style={{
-              width: Math.random() * 8 + 3,
-              height: Math.random() * 8 + 3,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              opacity: 0.1,
-            }}
+            style={{ width: Math.random() * 8 + 3, height: Math.random() * 8 + 3, left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`, opacity: 0.1 }}
             animate={{ y: [0, -20, 0], opacity: [0.05, 0.15, 0.05] }}
             transition={{ duration: Math.random() * 4 + 3, repeat: Infinity, delay: Math.random() * 2 }}
           />
@@ -56,39 +79,21 @@ const handleLogout = () => {
 
       {/* Navbar */}
       <nav className={`relative z-10 flex justify-between items-center px-10 py-5 ${darkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'} border-b`}>
-        <h1 onClick={() => navigate('/')} className="text-2xl font-bold text-yellow-500 cursor-pointer">
-          ⚖️ Civic Circle
-        </h1>
+        <h1 onClick={() => navigate('/')} className="text-2xl font-bold text-yellow-500 cursor-pointer">⚖️ Civic Circle</h1>
         <div className="flex gap-4 items-center">
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`px-4 py-2 rounded-full border transition duration-300 text-sm font-semibold ${darkMode ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' : 'border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white'}`}
-          >
+          <button onClick={() => setDarkMode(!darkMode)} className={`px-4 py-2 rounded-full border transition duration-300 text-sm font-semibold ${darkMode ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' : 'border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white'}`}>
             {darkMode ? '☀️ Light' : '🌙 Dark'}
           </button>
-          <button
-            onClick={handleLogout}
-            className="px-5 py-2 border border-red-400 text-red-400 rounded-full hover:bg-red-400 hover:text-white transition duration-300"
-          >
-            Logout
-          </button>
+          <button onClick={handleLogout} className="px-5 py-2 border border-red-400 text-red-400 rounded-full hover:bg-red-400 hover:text-white transition duration-300">Logout</button>
         </div>
       </nav>
 
-      {/* Dashboard Content */}
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-10">
 
         {/* Welcome Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className={`border rounded-3xl p-8 mb-6 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
-        >
+        <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.8 }} className={`border rounded-3xl p-8 mb-6 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}>
           <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center text-black text-3xl font-bold">
-              {user.name ? user.name[0].toUpperCase() : '?'}
-            </div>
+            <AdvisorAvatar />
             <div>
               <h1 className="text-3xl font-extrabold">Welcome, {user.name}! 👋</h1>
               <p className={`mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{user.email}</p>
@@ -98,12 +103,7 @@ const handleLogout = () => {
         </motion.div>
 
         {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="mb-6">
           <h2 className="text-2xl font-bold mb-4 text-yellow-400">Quick Actions</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
@@ -111,13 +111,7 @@ const handleLogout = () => {
               { icon: '📝', title: 'Write a Blog', desc: 'Share your legal knowledge', action: () => navigate('/blogs/create') },
               { icon: '📊', title: 'View Analytics', desc: 'Track your profile performance', action: () => {} },
             ].map((item, index) => (
-              <motion.div
-                key={index}
-                whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(250,204,21,0.2)' }}
-                whileTap={{ scale: 0.95 }}
-                onClick={item.action}
-                className={`border rounded-2xl p-6 cursor-pointer transition duration-300 ${darkMode ? 'bg-gray-900 border-gray-800 hover:border-yellow-400' : 'bg-gray-100 border-gray-200 hover:border-yellow-400'}`}
-              >
+              <motion.div key={index} whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(250,204,21,0.2)' }} whileTap={{ scale: 0.95 }} onClick={item.action} className={`border rounded-2xl p-6 cursor-pointer transition duration-300 ${darkMode ? 'bg-gray-900 border-gray-800 hover:border-yellow-400' : 'bg-gray-100 border-gray-200 hover:border-yellow-400'}`}>
                 <div className="text-4xl mb-3">{item.icon}</div>
                 <h3 className="text-lg font-bold mb-1 text-yellow-400">{item.title}</h3>
                 <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.desc}</p>
@@ -126,71 +120,58 @@ const handleLogout = () => {
           </div>
         </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-6"
-        >
+        {/* Stats — now with real review data */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="mb-6">
           <h2 className="text-2xl font-bold mb-4 text-yellow-400">Your Stats</h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             {[
               { icon: '👁️', label: 'Profile Views', value: '0' },
               { icon: '📅', label: 'Consultations', value: '0' },
               { icon: '💬', label: 'Messages', value: '0' },
-              { icon: '⭐', label: 'Reviews', value: '0' },
+              // ✅ Real review stats
+              { icon: '⭐', label: 'Reviews', value: String(reviewStats.totalReviews) },
             ].map((stat, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={`border rounded-2xl p-6 text-center ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
-              >
+              <motion.div key={index} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className={`border rounded-2xl p-6 text-center ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}>
                 <div className="text-4xl mb-2">{stat.icon}</div>
                 <h3 className="text-3xl font-extrabold text-yellow-400">{stat.value}</h3>
                 <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.label}</p>
               </motion.div>
             ))}
           </div>
+
+          {/* ✅ Avg rating bar */}
+          {reviewStats.totalReviews > 0 && (
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className={`mt-4 p-5 rounded-2xl border flex items-center gap-4 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}>
+              <span className="text-3xl">⭐</span>
+              <div>
+                <p className="font-bold text-yellow-400 text-2xl">{reviewStats.avgRating} / 5</p>
+                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>Average rating from {reviewStats.totalReviews} client review{reviewStats.totalReviews !== 1 ? 's' : ''}</p>
+              </div>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Profile Completion */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className={`border rounded-3xl p-8 mb-6 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className={`border rounded-3xl p-8 mb-6 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}>
           <h2 className="text-2xl font-bold mb-6 text-yellow-400">Profile Completion</h2>
           <div className="space-y-4">
             {[
               { label: 'Basic Information', done: true },
-              { label: 'Profile Photo', done: true },
-              { label: 'Bar Council Certificate', done: true },
-              { label: 'Specialization & City', done: true },
-              { label: 'Get Verified Badge', done: false },
+              { label: 'Profile Photo', done: !!profileData?.profile_photo },
+              { label: 'Bar Council Certificate', done: !!profileData?.bar_certificate },
+              { label: 'Specialization & City', done: !!(profileData?.specialization && profileData?.city) },
+              { label: 'Get Verified Badge', done: profileData?.is_verified || false },
             ].map((item, index) => (
               <div key={index} className="flex items-center gap-3">
-                <span className={`text-xl ${item.done ? 'text-green-400' : 'text-gray-500'}`}>
-                  {item.done ? '✅' : '⭕'}
-                </span>
-                <p className={item.done ? '' : darkMode ? 'text-gray-500' : 'text-gray-400'}>
-                  {item.label}
-                </p>
+                <span className={`text-xl ${item.done ? 'text-green-400' : 'text-gray-500'}`}>{item.done ? '✅' : '⭕'}</span>
+                <p className={item.done ? '' : darkMode ? 'text-gray-500' : 'text-gray-400'}>{item.label}</p>
               </div>
             ))}
           </div>
         </motion.div>
 
         {/* Tips */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className={`border rounded-3xl p-8 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
-        >
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className={`border rounded-3xl p-8 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}>
           <h2 className="text-2xl font-bold mb-6 text-yellow-400">Tips to Get More Clients</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {[

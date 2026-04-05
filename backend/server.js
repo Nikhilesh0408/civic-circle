@@ -25,6 +25,13 @@ app.use('/api/lawyers', lawyerRoutes);
 const blogRoutes = require('./routes/blogRoutes');
 app.use('/api/blogs', blogRoutes);
 
+const chatRoutes = require('./routes/chatRoutes');
+app.use('/api/chat', chatRoutes);
+
+// ✅ NEW: Reviews route
+const reviewRoutes = require('./routes/reviewRoutes');
+app.use('/api/reviews', reviewRoutes);
+
 // Test route
 app.get('/', (req, res) => {
   res.json({ message: 'Civic Circle API is running 🚀' });

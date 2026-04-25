@@ -20,10 +20,10 @@ const Login = () => {
       localStorage.setItem('user', JSON.stringify(res.data.user));
       alert('Login Successful!');
       if (res.data.user.role === 'client') {
-  navigate('/client-dashboard');
-} else {
-  navigate('/advisor-dashboard');
-}
+        navigate('/client-dashboard');
+      } else {
+        navigate('/advisor-dashboard');
+      }
     } catch (err) {
       setError(err.response?.data?.message || 'Login failed!');
     }
@@ -31,95 +31,280 @@ const Login = () => {
   };
 
   return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-950' : 'bg-white'} flex items-center justify-center px-4 transition-all duration-500`}>
-      
-      {/* Animated Background */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+    <div
+      style={{
+        minHeight: '100vh',
+        background: darkMode
+          ? 'linear-gradient(160deg, #0a1628 0%, #0d2145 60%, #0a1628 100%)'
+          : 'linear-gradient(160deg, #f0f4f8 0%, #e8f0fe 60%, #f0f4f8 100%)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: '0 16px',
+        fontFamily: "'Inter', sans-serif",
+        transition: 'background 0.5s',
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+        .login-input {
+          width: 100%;
+          padding: 12px 16px;
+          border-radius: 8px;
+          font-size: 14px;
+          font-family: 'Inter', sans-serif;
+          outline: none;
+          transition: border-color 0.2s, box-shadow 0.2s;
+          box-sizing: border-box;
+        }
+        .login-input:focus {
+          border-color: #1a56db !important;
+          box-shadow: 0 0 0 3px rgba(26,86,219,0.12);
+        }
+        .login-input option {
+          background: #0d1f3c;
+        }
+        .login-btn:hover { background: #1540a8 !important; }
+        .link-text:hover { text-decoration: underline; }
+        .nav-ghost:hover { background: rgba(255,255,255,0.06); }
+        .hero-grid-bg {
+          background-image:
+            linear-gradient(rgba(26,86,219,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(26,86,219,0.05) 1px, transparent 1px);
+          background-size: 48px 48px;
+        }
+      `}</style>
+
+      {/* Grid Background */}
+      <div
+        className="hero-grid-bg"
+        style={{ position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none' }}
+      />
+
+      {/* Floating Particles */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
         {[...Array(15)].map((_, i) => (
           <motion.div
             key={i}
-            className={`absolute rounded-full ${darkMode ? 'bg-yellow-400' : 'bg-gray-800'}`}
             style={{
-              width: Math.random() * 10 + 3,
-              height: Math.random() * 10 + 3,
+              position: 'absolute',
+              borderRadius: '50%',
+              background: '#1a56db',
+              width: Math.random() * 6 + 2,
+              height: Math.random() * 6 + 2,
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
-              opacity: 0.15,
+              opacity: 0.1,
             }}
-            animate={{ y: [0, -30, 0], x: [0, 15, 0], opacity: [0.1, 0.3, 0.1] }}
-            transition={{ duration: Math.random() * 4 + 3, repeat: Infinity, delay: Math.random() * 2 }}
+            animate={{ y: [0, -25, 0], x: [0, 10, 0], opacity: [0.06, 0.18, 0.06] }}
+            transition={{ duration: Math.random() * 5 + 4, repeat: Infinity, delay: Math.random() * 3 }}
           />
         ))}
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8 }}
-        className={`relative z-10 border rounded-2xl p-10 w-full max-w-md ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
+      {/* Top Navbar Strip */}
+      <div
+        style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 20,
+          height: 60,
+          background: darkMode ? '#0a1628' : '#ffffff',
+          borderBottom: darkMode ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          padding: '0 40px',
+        }}
       >
-        {/* Theme Toggle */}
-        <div className="flex justify-end mb-4">
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`px-4 py-2 rounded-full border text-sm font-semibold transition duration-300 ${darkMode ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' : 'border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white'}`}
-          >
-            {darkMode ? '☀️ Light' : '🌙 Dark'}
-          </button>
+        <div
+          style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }}
+          onClick={() => navigate('/')}
+        >
+          <div style={{
+            width: 30, height: 30, background: '#1a56db', borderRadius: 7,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15,
+          }}>⚖️</div>
+          <span style={{
+            fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 600,
+            color: darkMode ? '#ffffff' : '#0a1628',
+          }}>Civic Circle</span>
+        </div>
+        <button
+          className="nav-ghost"
+          onClick={() => setDarkMode(!darkMode)}
+          style={{
+            padding: '6px 14px', borderRadius: 6,
+            border: darkMode ? '1px solid #2d4a6e' : '1px solid #c5d5e8',
+            color: darkMode ? '#a8c0d6' : '#4a6080',
+            fontSize: 12, fontWeight: 500,
+            background: 'transparent', cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+            transition: 'background 0.2s',
+          }}
+        >
+          {darkMode ? '☀️ Light' : '🌙 Dark'}
+        </button>
+      </div>
+
+      {/* Login Card */}
+      <motion.div
+        initial={{ opacity: 0, y: 40 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: 'easeOut' }}
+        style={{
+          position: 'relative', zIndex: 10,
+          background: darkMode ? '#0d1f3c' : '#ffffff',
+          border: darkMode ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+          borderRadius: 16,
+          padding: '44px 40px',
+          width: '100%',
+          maxWidth: 420,
+          marginTop: 60,
+          boxSizing: 'border-box',
+        }}
+      >
+        {/* Card Header */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div style={{
+            width: 52, height: 52, background: '#1a56db', borderRadius: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 24, margin: '0 auto 16px',
+          }}>⚖️</div>
+          <h2 style={{
+            fontFamily: "'Playfair Display', serif",
+            fontSize: 28, fontWeight: 700,
+            color: darkMode ? '#e8f0fe' : '#0a1628',
+            marginBottom: 6,
+          }}>Welcome Back</h2>
+          <p style={{ fontSize: 14, color: darkMode ? '#5a7a9a' : '#7a8fa8', fontWeight: 400 }}>
+            Sign in to your Civic Circle account
+          </p>
         </div>
 
-        <h2 className="text-3xl font-bold text-yellow-400 text-center mb-8">⚖️ Login</h2>
+        {/* Error */}
+        {error && (
+          <div style={{
+            background: 'rgba(220,38,38,0.1)', border: '1px solid rgba(220,38,38,0.25)',
+            color: '#f87171', borderRadius: 8, padding: '10px 14px',
+            fontSize: 13, marginBottom: 20, textAlign: 'center',
+          }}>
+            {error}
+          </div>
+        )}
 
-        {error && <p className="text-red-400 text-center mb-4">{error}</p>}
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <select
-            value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            className={`px-4 py-3 rounded-xl border focus:outline-none focus:border-yellow-400 ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
-          >
-            <option value="client">Login as Client</option>
-            <option value="advisor">Login as Legal Advisor</option>
-          </select>
+          {/* Role Selector */}
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: darkMode ? '#6a8aaa' : '#7a8fa8', textTransform: 'uppercase', letterSpacing: '0.7px', display: 'block', marginBottom: 6 }}>
+              Login As
+            </label>
+            <select
+              value={formData.role}
+              onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+              className="login-input"
+              style={{
+                background: darkMode ? '#0a1628' : '#f8fafc',
+                border: darkMode ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                color: darkMode ? '#c8ddf5' : '#0a1628',
+              }}
+            >
+              <option value="client">Client</option>
+              <option value="advisor">Legal Advisor</option>
+            </select>
+          </div>
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            className={`px-4 py-3 rounded-xl border focus:outline-none focus:border-yellow-400 ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
-            required
-          />
+          {/* Email */}
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: darkMode ? '#6a8aaa' : '#7a8fa8', textTransform: 'uppercase', letterSpacing: '0.7px', display: 'block', marginBottom: 6 }}>
+              Email Address
+            </label>
+            <input
+              type="email"
+              placeholder="you@example.com"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+              className="login-input"
+              style={{
+                background: darkMode ? '#0a1628' : '#f8fafc',
+                border: darkMode ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                color: darkMode ? '#c8ddf5' : '#0a1628',
+              }}
+              required
+            />
+          </div>
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            className={`px-4 py-3 rounded-xl border focus:outline-none focus:border-yellow-400 ${darkMode ? 'bg-gray-800 text-white border-gray-700' : 'bg-white text-gray-900 border-gray-300'}`}
-            required
-          />
+          {/* Password */}
+          <div>
+            <label style={{ fontSize: 12, fontWeight: 600, color: darkMode ? '#6a8aaa' : '#7a8fa8', textTransform: 'uppercase', letterSpacing: '0.7px', display: 'block', marginBottom: 6 }}>
+              Password
+            </label>
+            <input
+              type="password"
+              placeholder="••••••••"
+              value={formData.password}
+              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+              className="login-input"
+              style={{
+                background: darkMode ? '#0a1628' : '#f8fafc',
+                border: darkMode ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                color: darkMode ? '#c8ddf5' : '#0a1628',
+              }}
+              required
+            />
+          </div>
 
+          {/* Submit */}
           <motion.button
-            whileHover={{ scale: 1.02, boxShadow: '0 0 20px rgba(250,204,21,0.4)' }}
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             type="submit"
             disabled={loading}
-            className="bg-yellow-400 text-black font-bold py-3 rounded-xl hover:bg-yellow-300 transition duration-300"
+            className="login-btn"
+            style={{
+              marginTop: 6,
+              padding: '13px',
+              background: loading ? '#3a5a9a' : '#1a56db',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 8,
+              fontSize: 15,
+              fontWeight: 600,
+              cursor: loading ? 'not-allowed' : 'pointer',
+              fontFamily: 'Inter, sans-serif',
+              transition: 'background 0.2s',
+              width: '100%',
+            }}
           >
-            {loading ? 'Logging in...' : 'Login'}
+            {loading ? 'Signing in...' : 'Sign In →'}
           </motion.button>
         </form>
 
-        <p className={`text-center mt-6 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
+        {/* Divider */}
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 12, margin: '24px 0 20px',
+        }}>
+          <div style={{ flex: 1, height: '1px', background: darkMode ? '#1e3a5f' : '#dde5ef' }} />
+          <span style={{ fontSize: 12, color: darkMode ? '#3a5a7a' : '#aab8c8', fontWeight: 500 }}>OR</span>
+          <div style={{ flex: 1, height: '1px', background: darkMode ? '#1e3a5f' : '#dde5ef' }} />
+        </div>
+
+        {/* Footer Links */}
+        <p style={{ textAlign: 'center', fontSize: 14, color: darkMode ? '#5a7a9a' : '#7a8fa8', marginBottom: 10 }}>
           Don't have an account?{' '}
-          <span onClick={() => navigate('/register')} className="text-yellow-400 cursor-pointer hover:underline">
+          <span
+            className="link-text"
+            onClick={() => navigate('/register')}
+            style={{ color: '#1a56db', cursor: 'pointer', fontWeight: 500 }}
+          >
             Register
           </span>
         </p>
-
-        <p className={`text-center mt-2 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>
-          <span onClick={() => navigate('/')} className="text-yellow-400 cursor-pointer hover:underline">
+        <p style={{ textAlign: 'center', fontSize: 13 }}>
+          <span
+            className="link-text"
+            onClick={() => navigate('/')}
+            style={{ color: darkMode ? '#3a5a7a' : '#aab8c8', cursor: 'pointer' }}
+          >
             ← Back to Home
           </span>
         </p>

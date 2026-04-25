@@ -10,15 +10,9 @@ const ClientDashboard = () => {
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
-    if (!storedUser) {
-      navigate('/login');
-      return;
-    }
+    if (!storedUser) { navigate('/login'); return; }
     const parsedUser = JSON.parse(storedUser);
-    if (parsedUser.role !== 'client') {
-      navigate('/login');
-      return;
-    }
+    if (parsedUser.role !== 'client') { navigate('/login'); return; }
     setUser(parsedUser);
   }, [navigate]);
 
@@ -32,80 +26,121 @@ const ClientDashboard = () => {
 
   if (!user) return null;
 
-  return (
-    <div className={`min-h-screen ${darkMode ? 'bg-gray-950 text-white' : 'bg-white text-gray-900'} transition-all duration-500`}>
+  const d = darkMode;
+  const avatarColors = ['#1a56db', '#0d5f3a', '#7c3aed', '#b45309', '#be185d'];
+  const avatarColor = avatarColors[(user.name?.charCodeAt(0) || 0) % avatarColors.length];
 
-      {/* Animated Background */}
-      <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
+  return (
+    <div style={{
+      minHeight: '100vh',
+      background: d ? '#0a1628' : '#f0f4f8',
+      color: d ? '#e8f0fe' : '#0a1628',
+      fontFamily: "'Inter', sans-serif",
+      transition: 'background 0.5s',
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&display=swap');
+        .action-card { transition: border-color 0.2s, transform 0.2s; }
+        .action-card:hover { border-color: #1a56db !important; transform: translateY(-3px); }
+        .stat-card { transition: border-color 0.2s; }
+        .stat-card:hover { border-color: #1a56db !important; }
+        .tip-card { transition: border-color 0.2s; }
+        .tip-card:hover { border-color: #1a56db !important; }
+        .nav-ghost:hover { background: rgba(255,255,255,0.06); }
+        .logout-btn:hover { background: rgba(239,68,68,0.1) !important; }
+        .hero-grid-bg {
+          background-image: linear-gradient(rgba(26,86,219,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(26,86,219,0.05) 1px, transparent 1px);
+          background-size: 48px 48px;
+        }
+      `}</style>
+
+      {/* Particles */}
+      <div style={{ position: 'fixed', inset: 0, zIndex: 0, overflow: 'hidden', pointerEvents: 'none' }}>
         {[...Array(15)].map((_, i) => (
-          <motion.div
-            key={i}
-            className={`absolute rounded-full ${darkMode ? 'bg-yellow-400' : 'bg-gray-800'}`}
-            style={{
-              width: Math.random() * 8 + 3,
-              height: Math.random() * 8 + 3,
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              opacity: 0.1,
-            }}
-            animate={{ y: [0, -20, 0], opacity: [0.05, 0.15, 0.05] }}
+          <motion.div key={i} style={{
+            position: 'absolute', borderRadius: '50%', background: '#1a56db',
+            width: Math.random() * 6 + 2, height: Math.random() * 6 + 2,
+            left: `${Math.random() * 100}%`, top: `${Math.random() * 100}%`, opacity: 0.08,
+          }}
+            animate={{ y: [0, -20, 0], opacity: [0.04, 0.14, 0.04] }}
             transition={{ duration: Math.random() * 4 + 3, repeat: Infinity, delay: Math.random() * 2 }}
           />
         ))}
       </div>
 
-      {/* Navbar */}
-      <nav className={`relative z-10 flex justify-between items-center px-10 py-5 ${darkMode ? 'bg-gray-950 border-gray-800' : 'bg-white border-gray-200'} border-b`}>
-        <h1 onClick={() => navigate('/')} className="text-2xl font-bold text-yellow-500 cursor-pointer">
-          ⚖️ Civic Circle
-        </h1>
-        <div className="flex gap-4 items-center">
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className={`px-4 py-2 rounded-full border transition duration-300 text-sm font-semibold ${darkMode ? 'border-yellow-400 text-yellow-400 hover:bg-yellow-400 hover:text-black' : 'border-gray-800 text-gray-800 hover:bg-gray-800 hover:text-white'}`}
-          >
-            {darkMode ? '☀️ Light' : '🌙 Dark'}
-          </button>
-          <button
-            onClick={handleLogout}
-            className="px-5 py-2 border border-red-400 text-red-400 rounded-full hover:bg-red-400 hover:text-white transition duration-300"
-          >
-            Logout
-          </button>
+      {/* ── NAVBAR ── */}
+      <nav style={{
+        position: 'relative', zIndex: 10,
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        padding: '0 40px', height: 64,
+        background: d ? '#0a1628' : '#ffffff',
+        borderBottom: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' }} onClick={() => navigate('/')}>
+          <div style={{ width: 32, height: 32, background: '#1a56db', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>⚖️</div>
+          <span style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 600, color: d ? '#ffffff' : '#0a1628' }}>Civic Circle</span>
+        </div>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <button className="nav-ghost" onClick={() => setDarkMode(!darkMode)} style={{
+            padding: '7px 16px', borderRadius: 6,
+            border: d ? '1px solid #2d4a6e' : '1px solid #c5d5e8',
+            color: d ? '#a8c0d6' : '#4a6080', fontSize: 13, fontWeight: 500,
+            background: 'transparent', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s',
+          }}>{d ? '☀️ Light' : '🌙 Dark'}</button>
+          <button className="logout-btn" onClick={handleLogout} style={{
+            padding: '7px 18px', borderRadius: 6,
+            border: '1px solid rgba(239,68,68,0.4)',
+            color: '#f87171', fontSize: 13, fontWeight: 500,
+            background: 'transparent', cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s',
+          }}>Logout</button>
         </div>
       </nav>
 
-      {/* Dashboard Content */}
-      <div className="relative z-10 max-w-6xl mx-auto px-6 py-10">
+      <div style={{ position: 'relative', zIndex: 10, maxWidth: 1000, margin: '0 auto', padding: '36px 24px 60px' }}>
 
-        {/* Welcome Section */}
+        {/* ── WELCOME CARD ── */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className={`border rounded-3xl p-8 mb-6 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
+          initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.7 }}
+          style={{
+            background: d
+              ? 'linear-gradient(135deg, #0d1f3c, #0f2d5a)'
+              : 'linear-gradient(135deg, #1a3a6e, #1a56db)',
+            border: d ? '1px solid #1e3a5f' : 'none',
+            borderRadius: 16, padding: '32px 28px', marginBottom: 20,
+          }}
         >
-          <div className="flex items-center gap-6">
-            <div className="w-20 h-20 bg-yellow-400 rounded-full flex items-center justify-center text-black text-3xl font-bold">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+            <div style={{
+              width: 72, height: 72, borderRadius: '50%', background: avatarColor,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 28, fontWeight: 700, color: '#ffffff', flexShrink: 0,
+              border: '3px solid rgba(255,255,255,0.15)',
+            }}>
               {user.name ? user.name[0].toUpperCase() : '?'}
             </div>
             <div>
-              <h1 className="text-3xl font-extrabold">Welcome, {user.name}! 👋</h1>
-              <p className={`mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{user.email}</p>
-              <span className="mt-2 inline-block bg-yellow-400 text-black text-xs font-bold px-3 py-1 rounded-full">Client</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', marginBottom: 4 }}>
+                <h1 style={{ fontFamily: "'Playfair Display', serif", fontSize: 26, fontWeight: 700, color: '#ffffff', margin: 0 }}>
+                  Welcome, {user.name}! 👋
+                </h1>
+                <span style={{
+                  background: 'rgba(255,255,255,0.15)', color: '#ffffff',
+                  fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                  borderRadius: 20, letterSpacing: '0.5px',
+                }}>Client</span>
+              </div>
+              <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 14 }}>{user.email}</p>
             </div>
           </div>
         </motion.div>
 
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-6"
-        >
-          <h2 className="text-2xl font-bold mb-4 text-yellow-400">Quick Actions</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ── QUICK ACTIONS ── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }} style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 3, height: 18, background: '#1a56db', borderRadius: 2 }} />
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: d ? '#e8f0fe' : '#0a1628', margin: 0 }}>Quick Actions</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
             {[
               { icon: '🔍', title: 'Find a Lawyer', desc: 'Search verified legal advisors', action: () => navigate('/search') },
               { icon: '🤖', title: 'AI Legal Assistant', desc: 'Get instant legal guidance', action: () => navigate('/ai-chat') },
@@ -113,28 +148,34 @@ const ClientDashboard = () => {
             ].map((item, index) => (
               <motion.div
                 key={index}
-                whileHover={{ scale: 1.05, boxShadow: '0 0 20px rgba(250,204,21,0.2)' }}
-                whileTap={{ scale: 0.95 }}
+                className="action-card"
+                whileTap={{ scale: 0.97 }}
                 onClick={item.action}
-                className={`border rounded-2xl p-6 cursor-pointer transition duration-300 ${darkMode ? 'bg-gray-900 border-gray-800 hover:border-yellow-400' : 'bg-gray-100 border-gray-200 hover:border-yellow-400'}`}
+                style={{
+                  background: d ? '#0d1f3c' : '#ffffff',
+                  border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                  borderRadius: 12, padding: '22px 20px', cursor: 'pointer',
+                }}
               >
-                <div className="text-4xl mb-3">{item.icon}</div>
-                <h3 className="text-lg font-bold mb-1 text-yellow-400">{item.title}</h3>
-                <p className={`text-sm ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{item.desc}</p>
+                <div style={{
+                  width: 46, height: 46, background: d ? '#0a1628' : '#eff4ff',
+                  borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 22, marginBottom: 14,
+                }}>{item.icon}</div>
+                <h3 style={{ fontSize: 15, fontWeight: 600, color: d ? '#c8ddf5' : '#0a1628', marginBottom: 5 }}>{item.title}</h3>
+                <p style={{ fontSize: 13, color: d ? '#5a7a9a' : '#6a7f9a', lineHeight: 1.5 }}>{item.desc}</p>
               </motion.div>
             ))}
           </div>
         </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="mb-6"
-        >
-          <h2 className="text-2xl font-bold mb-4 text-yellow-400">Your Activity</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* ── ACTIVITY STATS ── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }} style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+            <div style={{ width: 3, height: 18, background: '#1a56db', borderRadius: 2 }} />
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: d ? '#e8f0fe' : '#0a1628', margin: 0 }}>Your Activity</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
             {[
               { icon: '📅', label: 'Consultations Booked', value: '0' },
               { icon: '💬', label: 'Messages Sent', value: '0' },
@@ -142,37 +183,52 @@ const ClientDashboard = () => {
             ].map((stat, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                className="stat-card"
+                initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className={`border rounded-2xl p-6 text-center ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
+                transition={{ delay: 0.25 + index * 0.08 }}
+                style={{
+                  background: d ? '#0d1f3c' : '#ffffff',
+                  border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                  borderRadius: 12, padding: '24px 20px', textAlign: 'center',
+                  transition: 'border-color 0.2s',
+                }}
               >
-                <div className="text-4xl mb-2">{stat.icon}</div>
-                <h3 className="text-3xl font-extrabold text-yellow-400">{stat.value}</h3>
-                <p className={`text-sm mt-1 ${darkMode ? 'text-gray-400' : 'text-gray-600'}`}>{stat.label}</p>
+                <div style={{ fontSize: 30, marginBottom: 10 }}>{stat.icon}</div>
+                <div style={{ fontFamily: "'Playfair Display', serif", fontSize: 32, fontWeight: 700, color: '#1a56db', marginBottom: 4 }}>{stat.value}</div>
+                <p style={{ fontSize: 12, color: d ? '#5a7a9a' : '#7a8fa8', fontWeight: 500 }}>{stat.label}</p>
               </motion.div>
             ))}
           </div>
         </motion.div>
 
-        {/* Tips Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className={`border rounded-3xl p-8 ${darkMode ? 'bg-gray-900 border-gray-800' : 'bg-gray-100 border-gray-200'}`}
+        {/* ── LEGAL TIPS ── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+          style={{
+            background: d ? '#0d1f3c' : '#ffffff',
+            border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+            borderRadius: 16, padding: '28px',
+          }}
         >
-          <h2 className="text-2xl font-bold mb-6 text-yellow-400">Legal Tips for You</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+            <div style={{ width: 3, height: 18, background: '#1a56db', borderRadius: 2 }} />
+            <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: d ? '#e8f0fe' : '#0a1628', margin: 0 }}>Legal Tips for You</h2>
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
             {[
               { icon: '💡', tip: 'Always consult a lawyer before signing any legal document or contract.' },
               { icon: '🔒', tip: 'Keep copies of all important legal documents in a safe place.' },
               { icon: '⏰', tip: 'Be aware of legal deadlines — missing them can affect your case.' },
               { icon: '📞', tip: 'When in doubt, reach out to a verified legal advisor on Civic Circle.' },
             ].map((item, index) => (
-              <div key={index} className={`flex gap-3 p-4 rounded-2xl ${darkMode ? 'bg-gray-800' : 'bg-white'}`}>
-                <span className="text-2xl">{item.icon}</span>
-                <p className={`text-sm ${darkMode ? 'text-gray-300' : 'text-gray-700'}`}>{item.tip}</p>
+              <div key={index} className="tip-card" style={{
+                display: 'flex', gap: 12, padding: '14px 16px', borderRadius: 10,
+                background: d ? '#0a1628' : '#f8fafc',
+                border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                transition: 'border-color 0.2s',
+              }}>
+                <span style={{ fontSize: 22, flexShrink: 0 }}>{item.icon}</span>
+                <p style={{ fontSize: 13, color: d ? '#8ab0d0' : '#4a5a6a', lineHeight: 1.65 }}>{item.tip}</p>
               </div>
             ))}
           </div>

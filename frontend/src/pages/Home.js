@@ -8,12 +8,100 @@ const Home = () => {
   const navigate = useNavigate();
   const { darkMode, setDarkMode } = useContext(ThemeContext);
   const heroRef = useRef(null);
+  const canvasRef = useRef(null);
 
   useEffect(() => {
     gsap.fromTo(heroRef.current,
       { opacity: 0, y: 100 },
       { opacity: 1, y: 0, duration: 1.5, ease: 'power3.out' }
     );
+  }, []);
+
+  // ── Glowing Orb + Scanlines Canvas ──
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const container = canvas.parentElement;
+    let animId;
+
+    const resize = () => {
+      canvas.width = container.offsetWidth;
+      canvas.height = container.offsetHeight;
+    };
+
+    const draw = (ts) => {
+      const t = ts * 0.001;
+      const W = canvas.width;
+      const H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // Primary orb — center
+      const pulse = (Math.sin(t * 0.7) + 1) / 2;
+      const orbR = 220 + pulse * 40;
+      const g = ctx.createRadialGradient(W * 0.5, H * 0.48, 0, W * 0.5, H * 0.48, orbR);
+      g.addColorStop(0, `rgba(59,130,246,${0.18 + pulse * 0.09})`);
+      g.addColorStop(0.45, `rgba(29,78,216,${0.07 + pulse * 0.04})`);
+      g.addColorStop(1, 'rgba(59,130,246,0)');
+      ctx.beginPath();
+      ctx.arc(W * 0.5, H * 0.48, orbR, 0, Math.PI * 2);
+      ctx.fillStyle = g;
+      ctx.fill();
+
+      // Secondary smaller orb — bottom left accent
+      const pulse2 = (Math.sin(t * 0.5 + 2) + 1) / 2;
+      const orbR2 = 110 + pulse2 * 20;
+      const g2 = ctx.createRadialGradient(W * 0.12, H * 0.82, 0, W * 0.12, H * 0.82, orbR2);
+      g2.addColorStop(0, `rgba(99,102,241,${0.12 + pulse2 * 0.06})`);
+      g2.addColorStop(1, 'rgba(99,102,241,0)');
+      ctx.beginPath();
+      ctx.arc(W * 0.12, H * 0.82, orbR2, 0, Math.PI * 2);
+      ctx.fillStyle = g2;
+      ctx.fill();
+
+      // Tertiary orb — top right
+      const pulse3 = (Math.sin(t * 0.4 + 4) + 1) / 2;
+      const orbR3 = 90 + pulse3 * 15;
+      const g3 = ctx.createRadialGradient(W * 0.88, H * 0.15, 0, W * 0.88, H * 0.15, orbR3);
+      g3.addColorStop(0, `rgba(59,130,246,${0.1 + pulse3 * 0.05})`);
+      g3.addColorStop(1, 'rgba(59,130,246,0)');
+      ctx.beginPath();
+      ctx.arc(W * 0.88, H * 0.15, orbR3, 0, Math.PI * 2);
+      ctx.fillStyle = g3;
+      ctx.fill();
+
+      // Horizontal scanlines
+      for (let y = 0; y < H; y += 5) {
+        const alpha = 0.022 + Math.sin(y * 0.08 + t * 0.5) * 0.008;
+        ctx.fillStyle = `rgba(59,130,246,${alpha})`;
+        ctx.fillRect(0, y, W, 1);
+      }
+
+      // Diagonal drifting lines
+      ctx.save();
+      ctx.globalAlpha = 0.055;
+      ctx.strokeStyle = 'rgba(147,197,253,1)';
+      ctx.lineWidth = 0.6;
+      const offset = (t * 18) % 70;
+      for (let x = -H; x < W + H; x += 70) {
+        ctx.beginPath();
+        ctx.moveTo(x + offset, 0);
+        ctx.lineTo(x + offset + H, H);
+        ctx.stroke();
+      }
+      ctx.restore();
+
+      animId = requestAnimationFrame(draw);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+    animId = requestAnimationFrame(draw);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      window.removeEventListener('resize', resize);
+    };
   }, []);
 
   return (
@@ -29,12 +117,6 @@ const Home = () => {
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&display=swap');
         .serif { font-family: 'Playfair Display', serif; }
-        .hero-grid-bg {
-          background-image:
-            linear-gradient(rgba(26,86,219,0.06) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(26,86,219,0.06) 1px, transparent 1px);
-          background-size: 48px 48px;
-        }
         .feature-card:hover {
           border-color: #1a56db !important;
           transform: translateY(-4px);
@@ -136,83 +218,101 @@ const Home = () => {
       {/* ── HERO ── */}
       <div
         ref={heroRef}
-        className="hero-grid-bg relative z-10 flex flex-col items-center justify-center text-center px-6 py-24"
+        className="relative z-10 flex flex-col items-center justify-center text-center px-6 py-24"
         style={{
+          position: 'relative',
+          overflow: 'hidden',
           background: darkMode
             ? 'linear-gradient(160deg, #0a1628 0%, #0d2145 55%, #0f2d5a 100%)'
             : 'linear-gradient(160deg, #1a3a6e 0%, #1a56db 60%, #2563eb 100%)',
         }}
       >
-        {/* Badge */}
-        <motion.div
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+        {/* Canvas Background */}
+        <canvas
+          ref={canvasRef}
           style={{
-            display: 'inline-flex', alignItems: 'center', gap: 7,
-            background: 'rgba(26,86,219,0.18)', border: '1px solid rgba(26,86,219,0.35)',
-            color: '#93b8f5', fontSize: 11, fontWeight: 600, padding: '5px 16px',
-            borderRadius: 20, marginBottom: 28, letterSpacing: '0.8px', textTransform: 'uppercase',
+            position: 'absolute',
+            inset: 0,
+            width: '100%',
+            height: '100%',
+            pointerEvents: 'none',
+            zIndex: 0,
           }}
-        >
-          <span style={{ width: 6, height: 6, background: '#4a9eff', borderRadius: '50%', display: 'inline-block' }} />
-          Trusted Legal Network
-        </motion.div>
+        />
 
-        {/* Animated Scale Icon */}
-        <motion.div
-          animate={{ rotate: [0, 4, -4, 0] }}
-          transition={{ duration: 5, repeat: Infinity }}
-          style={{ fontSize: 72, marginBottom: 20 }}
-        >
-          ⚖️
-        </motion.div>
+        {/* Hero Content — sits above canvas */}
+        <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          {/* Badge */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6 }}
+            style={{
+              display: 'inline-flex', alignItems: 'center', gap: 7,
+              background: 'rgba(26,86,219,0.18)', border: '1px solid rgba(26,86,219,0.35)',
+              color: '#93b8f5', fontSize: 11, fontWeight: 600, padding: '5px 16px',
+              borderRadius: 20, marginBottom: 28, letterSpacing: '0.8px', textTransform: 'uppercase',
+            }}
+          >
+            <span style={{ width: 6, height: 6, background: '#4a9eff', borderRadius: '50%', display: 'inline-block' }} />
+            Trusted Legal Network
+          </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, scale: 0.92 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 1 }}
-        >
-          <h1 className="serif" style={{ fontSize: 'clamp(38px, 6vw, 58px)', fontWeight: 700, color: '#ffffff', lineHeight: 1.15, marginBottom: 20, letterSpacing: '-0.5px' }}>
-            Legal Help,{' '}
-            <span style={{ color: '#4a9eff' }}>Simplified</span>
-          </h1>
-          <p style={{ fontSize: 17, color: '#8ab0d0', maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.75, fontWeight: 400 }}>
-            Connect with verified legal advisors instantly. Get expert legal guidance from the comfort of your home.
-          </p>
+          {/* Animated Scale Icon */}
+          <motion.div
+            animate={{ rotate: [0, 4, -4, 0] }}
+            transition={{ duration: 5, repeat: Infinity }}
+            style={{ fontSize: 72, marginBottom: 20 }}
+          >
+            ⚖️
+          </motion.div>
 
-          <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => navigate('/search')}
-              className="cta-btn-primary"
-              style={{
-                padding: '13px 32px', background: '#1a56db', color: '#ffffff',
-                border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600,
-                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
-                display: 'flex', alignItems: 'center', gap: 8, transition: 'background 0.2s',
-              }}
-            >
-              🔍 Find a Lawyer
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.04 }}
-              whileTap={{ scale: 0.96 }}
-              onClick={() => navigate('/register')}
-              className="cta-btn-outline"
-              style={{
-                padding: '13px 32px', background: 'transparent', color: '#ffffff',
-                border: '1.5px solid rgba(255,255,255,0.35)', borderRadius: 8,
-                fontSize: 15, fontWeight: 600, cursor: 'pointer',
-                fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 8,
-                transition: 'background 0.2s',
-              }}
-            >
-              ⚖️ Join as Advisor
-            </motion.button>
-          </div>
-        </motion.div>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.92 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1 }}
+          >
+            <h1 className="serif" style={{ fontSize: 'clamp(38px, 6vw, 58px)', fontWeight: 700, color: '#ffffff', lineHeight: 1.15, marginBottom: 20, letterSpacing: '-0.5px' }}>
+              Legal Help,{' '}
+              <span style={{ color: '#4a9eff' }}>Simplified</span>
+            </h1>
+            <p style={{ fontSize: 17, color: '#8ab0d0', maxWidth: 520, margin: '0 auto 40px', lineHeight: 1.75, fontWeight: 400 }}>
+              Connect with verified legal advisors instantly. Get expert legal guidance from the comfort of your home.
+            </p>
+
+            <div style={{ display: 'flex', gap: 14, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => navigate('/search')}
+                className="cta-btn-primary"
+                style={{
+                  padding: '13px 32px', background: '#1a56db', color: '#ffffff',
+                  border: 'none', borderRadius: 8, fontSize: 15, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                  display: 'flex', alignItems: 'center', gap: 8, transition: 'background 0.2s',
+                }}
+              >
+                🔍 Find a Lawyer
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.96 }}
+                onClick={() => navigate('/register')}
+                className="cta-btn-outline"
+                style={{
+                  padding: '13px 32px', background: 'transparent', color: '#ffffff',
+                  border: '1.5px solid rgba(255,255,255,0.35)', borderRadius: 8,
+                  fontSize: 15, fontWeight: 600, cursor: 'pointer',
+                  fontFamily: 'Inter, sans-serif', display: 'flex', alignItems: 'center', gap: 8,
+                  transition: 'background 0.2s',
+                }}
+              >
+                ⚖️ Join as Advisor
+              </motion.button>
+            </div>
+          </motion.div>
+        </div>
       </div>
 
       {/* ── STATS ── */}
@@ -244,9 +344,7 @@ const Home = () => {
       </div>
 
       {/* ── FEATURES ── */}
-      <div
-        className="relative z-10 px-10 py-20 max-w-6xl mx-auto"
-      >
+      <div className="relative z-10 px-10 py-20 max-w-6xl mx-auto">
         <div style={{ textAlign: 'center', marginBottom: 12 }}>
           <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '1.5px', color: '#1a56db' }}>
             Why Civic Circle

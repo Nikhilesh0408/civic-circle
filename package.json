@@ -17,5 +17,8 @@
   "bugs": {
     "url": "https://github.com/Nikhilesh0408/civic-circle/issues"
   },
-  "homepage": "https://github.com/Nikhilesh0408/civic-circle#readme"
+  "homepage": "https://github.com/Nikhilesh0408/civic-circle#readme",
+  "dependencies": {
+    "nodemailer": "^8.0.7"
+  }
 }

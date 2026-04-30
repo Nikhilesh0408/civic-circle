@@ -12,6 +12,9 @@ import CreateBlog from './pages/CreateBlog';
 import BlogDetail from './pages/BlogDetail';
 import AIAssistant from './pages/AIAssistant';
 import AIChatbot from './components/AIChatbot';
+import BookConsultation from './pages/BookConsultation';
+import AdminLogin from './pages/AdminLogin';
+import AdminDashboard from './pages/AdminDashboard';
 
 export const ThemeContext = React.createContext();
 
@@ -34,8 +37,10 @@ function App() {
             <Route path="/blogs/create" element={<CreateBlog />} />
             <Route path="/blogs/:id" element={<BlogDetail />} />
             <Route path="/ai-chat" element={<AIAssistant />} />
+            <Route path="/book-consultation/:id" element={<BookConsultation />} />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
           </Routes>
-          {/* AI Chatbot appears on every page */}
           <AIChatbot />
         </Router>
       </div>

@@ -1,12 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { ThemeContext } from '../App';
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
   const { darkMode, setDarkMode } = useContext(ThemeContext);
   const [user, setUser] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -14,7 +17,18 @@ const ClientDashboard = () => {
     const parsedUser = JSON.parse(storedUser);
     if (parsedUser.role !== 'client') { navigate('/login'); return; }
     setUser(parsedUser);
+    fetchBookings(parsedUser.id);
   }, [navigate]);
+
+  const fetchBookings = async (clientId) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/bookings/client/${clientId}`);
+      setBookings(res.data.bookings || []);
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+    }
+    setBookingsLoading(false);
+  };
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -29,6 +43,12 @@ const ClientDashboard = () => {
   const d = darkMode;
   const avatarColors = ['#1a56db', '#0d5f3a', '#7c3aed', '#b45309', '#be185d'];
   const avatarColor = avatarColors[(user.name?.charCodeAt(0) || 0) % avatarColors.length];
+
+  const statusConfig = {
+    pending: { label: 'Pending', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', border: 'rgba(245,158,11,0.25)', icon: '⏳' },
+    confirmed: { label: 'Confirmed', color: '#10b981', bg: 'rgba(16,185,129,0.12)', border: 'rgba(16,185,129,0.25)', icon: '✅' },
+    rejected: { label: 'Rejected', color: '#ef4444', bg: 'rgba(239,68,68,0.12)', border: 'rgba(239,68,68,0.25)', icon: '❌' },
+  };
 
   return (
     <div style={{
@@ -46,12 +66,10 @@ const ClientDashboard = () => {
         .stat-card:hover { border-color: #1a56db !important; }
         .tip-card { transition: border-color 0.2s; }
         .tip-card:hover { border-color: #1a56db !important; }
+        .booking-card { transition: border-color 0.2s; }
+        .booking-card:hover { border-color: #1a56db !important; }
         .nav-ghost:hover { background: rgba(255,255,255,0.06); }
         .logout-btn:hover { background: rgba(239,68,68,0.1) !important; }
-        .hero-grid-bg {
-          background-image: linear-gradient(rgba(26,86,219,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(26,86,219,0.05) 1px, transparent 1px);
-          background-size: 48px 48px;
-        }
       `}</style>
 
       {/* Particles */}
@@ -177,9 +195,9 @@ const ClientDashboard = () => {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 14 }}>
             {[
-              { icon: '📅', label: 'Consultations Booked', value: '0' },
-              { icon: '💬', label: 'Messages Sent', value: '0' },
-              { icon: '⭐', label: 'Reviews Given', value: '0' },
+              { icon: '📅', label: 'Consultations Booked', value: bookings.length.toString() },
+              { icon: '✅', label: 'Confirmed', value: bookings.filter(b => b.status === 'confirmed').length.toString() },
+              { icon: '⏳', label: 'Pending', value: bookings.filter(b => b.status === 'pending').length.toString() },
             ].map((stat, index) => (
               <motion.div
                 key={index}
@@ -202,8 +220,157 @@ const ClientDashboard = () => {
           </div>
         </motion.div>
 
+        {/* ── MY BOOKINGS ── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 3, height: 18, background: '#1a56db', borderRadius: 2 }} />
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: d ? '#e8f0fe' : '#0a1628', margin: 0 }}>My Bookings</h2>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+              onClick={() => navigate('/search')}
+              style={{
+                padding: '7px 16px', background: '#1a56db', color: '#ffffff',
+                border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 600,
+                cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+              }}
+            >
+              + Book New Consultation
+            </motion.button>
+          </div>
+
+          {bookingsLoading ? (
+            <div style={{
+              background: d ? '#0d1f3c' : '#ffffff',
+              border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+              borderRadius: 14, padding: '40px', textAlign: 'center',
+            }}>
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} style={{ fontSize: 32, display: 'inline-block' }}>⚖️</motion.div>
+              <p style={{ color: d ? '#5a7a9a' : '#8a9ab0', marginTop: 12, fontSize: 14 }}>Loading your bookings...</p>
+            </div>
+          ) : bookings.length === 0 ? (
+            <div style={{
+              background: d ? '#0d1f3c' : '#ffffff',
+              border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+              borderRadius: 14, padding: '48px 24px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>📅</div>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: d ? '#c8ddf5' : '#0a1628', marginBottom: 8 }}>
+                No Consultations Yet
+              </h3>
+              <p style={{ fontSize: 13, color: d ? '#5a7a9a' : '#6a7f9a', lineHeight: 1.65, marginBottom: 20, maxWidth: 320, margin: '0 auto 20px' }}>
+                Book your first consultation with a verified legal advisor to get expert guidance.
+              </p>
+              <motion.button
+                whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                onClick={() => navigate('/search')}
+                style={{
+                  padding: '10px 24px', background: '#1a56db', color: '#ffffff',
+                  border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600,
+                  cursor: 'pointer', fontFamily: 'Inter, sans-serif',
+                }}
+              >
+                Find a Lawyer
+              </motion.button>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {bookings.map((booking, index) => {
+                const status = statusConfig[booking.status] || statusConfig.pending;
+                return (
+                  <motion.div
+                    key={booking.id}
+                    className="booking-card"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.07 }}
+                    style={{
+                      background: d ? '#0d1f3c' : '#ffffff',
+                      border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                      borderRadius: 14, padding: '20px 22px',
+                      transition: 'border-color 0.2s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+                      {/* Left — advisor info */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                        <div style={{
+                          width: 46, height: 46, borderRadius: '50%', background: '#1a56db',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 18, fontWeight: 700, color: '#ffffff', flexShrink: 0,
+                        }}>
+                          {booking.advisor_name ? booking.advisor_name[0].toUpperCase() : '?'}
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: 15, fontWeight: 600, color: d ? '#c8ddf5' : '#0a1628', margin: '0 0 4px' }}>
+                            {booking.advisor_name}
+                          </h3>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12, color: d ? '#5a7a9a' : '#6a7f9a' }}>
+                            <span>📅 {new Date(booking.booking_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            <span>🕐 {booking.booking_time}</span>
+                          </div>
+                          {booking.message && (
+                            <p style={{ fontSize: 12, color: d ? '#5a7a9a' : '#8a9ab0', marginTop: 6, lineHeight: 1.5, maxWidth: 420 }}>
+                              "{booking.message.length > 80 ? booking.message.substring(0, 80) + '...' : booking.message}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right — status badge + date booked */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          background: status.bg, border: `1px solid ${status.border}`,
+                          color: status.color, fontSize: 12, fontWeight: 600,
+                          padding: '4px 12px', borderRadius: 20,
+                        }}>
+                          {status.icon} {status.label}
+                        </div>
+                        <p style={{ fontSize: 11, color: d ? '#3a5a7a' : '#aab8c8' }}>
+                          Booked {new Date(booking.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Status message */}
+                    {booking.status === 'confirmed' && (
+                      <div style={{
+                        marginTop: 14, padding: '9px 14px', borderRadius: 8,
+                        background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)',
+                        fontSize: 12, color: '#34d399',
+                      }}>
+                        ✅ Your consultation is confirmed! Check your email for details.
+                      </div>
+                    )}
+                    {booking.status === 'rejected' && (
+                      <div style={{
+                        marginTop: 14, padding: '9px 14px', borderRadius: 8,
+                        background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                        fontSize: 12, color: '#f87171',
+                      }}>
+                        ❌ This consultation was not accepted. Try booking with another advisor.
+                      </div>
+                    )}
+                    {booking.status === 'pending' && (
+                      <div style={{
+                        marginTop: 14, padding: '9px 14px', borderRadius: 8,
+                        background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)',
+                        fontSize: 12, color: '#fbbf24',
+                      }}>
+                        ⏳ Waiting for the advisor to confirm your booking.
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+
         {/* ── LEGAL TIPS ── */}
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}
           style={{
             background: d ? '#0d1f3c' : '#ffffff',
             border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',

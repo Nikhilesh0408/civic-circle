@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { ThemeContext } from '../App';
@@ -10,6 +10,9 @@ const AdvisorDashboard = () => {
   const [user, setUser] = useState(null);
   const [profileData, setProfileData] = useState(null);
   const [reviewStats, setReviewStats] = useState({ avgRating: 0, totalReviews: 0 });
+  const [bookings, setBookings] = useState([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState(null);
 
   useEffect(() => {
     const storedUser = localStorage.getItem('user');
@@ -29,7 +32,31 @@ const AdvisorDashboard = () => {
       }
     };
     fetchData();
+    fetchBookings(parsedUser.id);
   }, [navigate]);
+
+  const fetchBookings = async (advisorId) => {
+    try {
+      const res = await axios.get(`http://localhost:5000/api/bookings/advisor/${advisorId}`);
+      setBookings(res.data.bookings || []);
+    } catch (err) {
+      console.error('Error fetching bookings:', err);
+    }
+    setBookingsLoading(false);
+  };
+
+  const handleStatusUpdate = async (bookingId, status) => {
+    setUpdatingId(bookingId);
+    try {
+      await axios.put(`http://localhost:5000/api/bookings/status/${bookingId}`, { status });
+      setBookings(prev =>
+        prev.map(b => b.id === bookingId ? { ...b, status } : b)
+      );
+    } catch (err) {
+      console.error('Error updating booking status:', err);
+    }
+    setUpdatingId(null);
+  };
 
   const handleLogout = () => {
     if (window.confirm('Are you sure you want to logout?')) {
@@ -77,6 +104,14 @@ const AdvisorDashboard = () => {
   ];
   const completionPct = Math.round((completionItems.filter(i => i.done).length / completionItems.length) * 100);
 
+  const statusConfig = {
+    pending:   { label: 'Pending',   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)',  border: 'rgba(245,158,11,0.25)',  icon: '⏳' },
+    confirmed: { label: 'Confirmed', color: '#10b981', bg: 'rgba(16,185,129,0.12)',  border: 'rgba(16,185,129,0.25)',  icon: '✅' },
+    rejected:  { label: 'Rejected',  color: '#ef4444', bg: 'rgba(239,68,68,0.12)',   border: 'rgba(239,68,68,0.25)',   icon: '❌' },
+  };
+
+  const pendingCount = bookings.filter(b => b.status === 'pending').length;
+
   return (
     <div style={{
       minHeight: '100vh',
@@ -93,13 +128,13 @@ const AdvisorDashboard = () => {
         .stat-card:hover { border-color: #1a56db !important; }
         .tip-card { transition: border-color 0.2s; }
         .tip-card:hover { border-color: #1a56db !important; }
+        .booking-card { transition: border-color 0.2s; }
+        .booking-card:hover { border-color: #1a56db !important; }
         .nav-ghost:hover { background: rgba(255,255,255,0.06); }
         .logout-btn:hover { background: rgba(239,68,68,0.1) !important; }
         .progress-bar-fill { transition: width 0.8s ease; }
-        .hero-grid-bg {
-          background-image: linear-gradient(rgba(26,86,219,0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(26,86,219,0.05) 1px, transparent 1px);
-          background-size: 48px 48px;
-        }
+        .btn-confirm:hover { background: #059669 !important; }
+        .btn-reject:hover { background: #dc2626 !important; }
       `}</style>
 
       {/* Particles */}
@@ -169,10 +204,17 @@ const AdvisorDashboard = () => {
                   fontSize: 11, fontWeight: 600, padding: '3px 10px',
                   borderRadius: 20, letterSpacing: '0.5px',
                 }}>Legal Advisor</span>
+                {pendingCount > 0 && (
+                  <span style={{
+                    background: 'rgba(245,158,11,0.25)', color: '#fbbf24',
+                    fontSize: 11, fontWeight: 600, padding: '3px 10px',
+                    borderRadius: 20, letterSpacing: '0.3px',
+                  }}>
+                    ⏳ {pendingCount} pending booking{pendingCount !== 1 ? 's' : ''}
+                  </span>
+                )}
               </div>
               <p style={{ color: 'rgba(255,255,255,0.55)', fontSize: 14, marginBottom: 12 }}>{user.email}</p>
-
-              {/* Inline rating if available */}
               {reviewStats.totalReviews > 0 && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <div style={{ display: 'flex', gap: 2 }}>
@@ -232,8 +274,8 @@ const AdvisorDashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 14 }}>
             {[
               { icon: '👁️', label: 'Profile Views', value: '0' },
-              { icon: '📅', label: 'Consultations', value: '0' },
-              { icon: '💬', label: 'Messages', value: '0' },
+              { icon: '📅', label: 'Consultations', value: String(bookings.length) },
+              { icon: '⏳', label: 'Pending', value: String(pendingCount) },
               { icon: '⭐', label: 'Reviews', value: String(reviewStats.totalReviews) },
             ].map((stat, index) => (
               <motion.div
@@ -256,7 +298,6 @@ const AdvisorDashboard = () => {
             ))}
           </div>
 
-          {/* Avg Rating Bar */}
           {reviewStats.totalReviews > 0 && (
             <motion.div
               initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }}
@@ -280,9 +321,209 @@ const AdvisorDashboard = () => {
           )}
         </motion.div>
 
+        {/* ── INCOMING BOOKINGS ── */}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }} style={{ marginBottom: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16, flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 3, height: 18, background: '#1a56db', borderRadius: 2 }} />
+              <h2 style={{ fontFamily: "'Playfair Display', serif", fontSize: 20, fontWeight: 700, color: d ? '#e8f0fe' : '#0a1628', margin: 0 }}>Incoming Bookings</h2>
+              {pendingCount > 0 && (
+                <div style={{
+                  width: 20, height: 20, borderRadius: '50%',
+                  background: '#f59e0b', color: '#fff',
+                  fontSize: 11, fontWeight: 700,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  {pendingCount}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {bookingsLoading ? (
+            <div style={{
+              background: d ? '#0d1f3c' : '#ffffff',
+              border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+              borderRadius: 14, padding: '40px', textAlign: 'center',
+            }}>
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 2, repeat: Infinity, ease: 'linear' }} style={{ fontSize: 32, display: 'inline-block' }}>⚖️</motion.div>
+              <p style={{ color: d ? '#5a7a9a' : '#8a9ab0', marginTop: 12, fontSize: 14 }}>Loading bookings...</p>
+            </div>
+          ) : bookings.length === 0 ? (
+            <div style={{
+              background: d ? '#0d1f3c' : '#ffffff',
+              border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+              borderRadius: 14, padding: '48px 24px', textAlign: 'center',
+            }}>
+              <div style={{ fontSize: 48, marginBottom: 16 }}>📅</div>
+              <h3 style={{ fontFamily: "'Playfair Display', serif", fontSize: 18, fontWeight: 700, color: d ? '#c8ddf5' : '#0a1628', marginBottom: 8 }}>
+                No Bookings Yet
+              </h3>
+              <p style={{ fontSize: 13, color: d ? '#5a7a9a' : '#6a7f9a', lineHeight: 1.65, maxWidth: 320, margin: '0 auto' }}>
+                When clients book a consultation with you, they'll appear here for you to confirm or reject.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {bookings.map((booking, index) => {
+                const status = statusConfig[booking.status] || statusConfig.pending;
+                const isPending = booking.status === 'pending';
+                const isUpdating = updatingId === booking.id;
+
+                return (
+                  <motion.div
+                    key={booking.id}
+                    className="booking-card"
+                    initial={{ opacity: 0, y: 14 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.07 }}
+                    style={{
+                      background: d ? '#0d1f3c' : '#ffffff',
+                      border: isPending
+                        ? `1px solid rgba(245,158,11,0.35)`
+                        : d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                      borderRadius: 14, padding: '20px 22px',
+                      transition: 'border-color 0.2s',
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
+
+                      {/* Left — client info */}
+                      <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                        <div style={{
+                          width: 46, height: 46, borderRadius: '50%', background: '#1a56db',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 18, fontWeight: 700, color: '#ffffff', flexShrink: 0,
+                        }}>
+                          {booking.client_name ? booking.client_name[0].toUpperCase() : '?'}
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: 15, fontWeight: 600, color: d ? '#c8ddf5' : '#0a1628', margin: '0 0 4px' }}>
+                            {booking.client_name}
+                          </h3>
+                          <p style={{ fontSize: 12, color: d ? '#5a7a9a' : '#8a9ab0', margin: '0 0 6px' }}>
+                            {booking.client_email}
+                          </p>
+                          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, fontSize: 12, color: d ? '#5a7a9a' : '#6a7f9a' }}>
+                            <span>📅 {new Date(booking.booking_date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            <span>🕐 {booking.booking_time}</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Right — status badge */}
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
+                        <div style={{
+                          display: 'inline-flex', alignItems: 'center', gap: 5,
+                          background: status.bg, border: `1px solid ${status.border}`,
+                          color: status.color, fontSize: 12, fontWeight: 600,
+                          padding: '4px 12px', borderRadius: 20,
+                        }}>
+                          {status.icon} {status.label}
+                        </div>
+                        <p style={{ fontSize: 11, color: d ? '#3a5a7a' : '#aab8c8' }}>
+                          Booked {new Date(booking.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Message from client */}
+                    {booking.message && (
+                      <div style={{
+                        marginTop: 14, padding: '10px 14px', borderRadius: 8,
+                        background: d ? '#0a1628' : '#f8fafc',
+                        border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
+                        fontSize: 13, color: d ? '#8ab0d0' : '#4a5a6a',
+                        lineHeight: 1.6,
+                      }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px', color: d ? '#5a7a9a' : '#8a9ab0', display: 'block', marginBottom: 4 }}>
+                          Client's Issue
+                        </span>
+                        "{booking.message}"
+                      </div>
+                    )}
+
+                    {/* Confirm / Reject buttons — only for pending */}
+                    <AnimatePresence>
+                      {isPending && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                          style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}
+                        >
+                          <motion.button
+                            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                            onClick={() => handleStatusUpdate(booking.id, 'confirmed')}
+                            disabled={isUpdating}
+                            className="btn-confirm"
+                            style={{
+                              padding: '9px 22px',
+                              background: isUpdating ? '#059669' : '#10b981',
+                              color: '#ffffff', border: 'none', borderRadius: 8,
+                              fontSize: 13, fontWeight: 600,
+                              cursor: isUpdating ? 'not-allowed' : 'pointer',
+                              fontFamily: 'Inter, sans-serif',
+                              transition: 'background 0.2s',
+                              display: 'flex', alignItems: 'center', gap: 6,
+                              opacity: isUpdating ? 0.7 : 1,
+                            }}
+                          >
+                            {isUpdating ? (
+                              <motion.span animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}>⚖️</motion.span>
+                            ) : '✅'} Confirm
+                          </motion.button>
+                          <motion.button
+                            whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                            onClick={() => handleStatusUpdate(booking.id, 'rejected')}
+                            disabled={isUpdating}
+                            className="btn-reject"
+                            style={{
+                              padding: '9px 22px',
+                              background: 'transparent',
+                              color: '#ef4444',
+                              border: '1px solid rgba(239,68,68,0.4)',
+                              borderRadius: 8, fontSize: 13, fontWeight: 600,
+                              cursor: isUpdating ? 'not-allowed' : 'pointer',
+                              fontFamily: 'Inter, sans-serif',
+                              transition: 'background 0.2s',
+                              display: 'flex', alignItems: 'center', gap: 6,
+                              opacity: isUpdating ? 0.7 : 1,
+                            }}
+                          >
+                            ❌ Reject
+                          </motion.button>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Post-action messages */}
+                    {booking.status === 'confirmed' && (
+                      <div style={{
+                        marginTop: 12, padding: '9px 14px', borderRadius: 8,
+                        background: 'rgba(16,185,129,0.08)', border: '1px solid rgba(16,185,129,0.2)',
+                        fontSize: 12, color: '#34d399',
+                      }}>
+                        ✅ Confirmed — confirmation email sent to {booking.client_name}.
+                      </div>
+                    )}
+                    {booking.status === 'rejected' && (
+                      <div style={{
+                        marginTop: 12, padding: '9px 14px', borderRadius: 8,
+                        background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)',
+                        fontSize: 12, color: '#f87171',
+                      }}>
+                        ❌ Rejected — client has been notified via email.
+                      </div>
+                    )}
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </motion.div>
+
         {/* ── PROFILE COMPLETION ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
           style={{
             background: d ? '#0d1f3c' : '#ffffff',
             border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',
@@ -302,7 +543,6 @@ const AdvisorDashboard = () => {
             }}>{completionPct}% Complete</span>
           </div>
 
-          {/* Progress Bar */}
           <div style={{ height: 6, background: d ? '#1e3a5f' : '#e8f0fe', borderRadius: 3, marginBottom: 20, overflow: 'hidden' }}>
             <motion.div
               className="progress-bar-fill"
@@ -336,7 +576,7 @@ const AdvisorDashboard = () => {
 
         {/* ── TIPS ── */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+          initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.55 }}
           style={{
             background: d ? '#0d1f3c' : '#ffffff',
             border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef',

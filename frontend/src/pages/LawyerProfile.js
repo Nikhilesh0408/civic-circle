@@ -117,7 +117,6 @@ const LawyerProfile = () => {
   };
 
   const d = darkMode;
-
   const avatarColors = ['#1a56db', '#0d5f3a', '#7c3aed', '#b45309', '#be185d'];
 
   if (loading) return (
@@ -250,6 +249,8 @@ const LawyerProfile = () => {
                 {lawyer.experience_duration && <span>💼 {lawyer.experience_duration} experience</span>}
                 {lawyer.languages_known && <span>🗣️ {lawyer.languages_known}</span>}
               </div>
+
+              {/* ── BUTTONS — only onClick changed on Book Consultation ── */}
               <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
                   onClick={() => navigate('/register')}
@@ -257,8 +258,18 @@ const LawyerProfile = () => {
                   style={{ padding: '10px 24px', background: '#1a56db', color: '#ffffff', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s' }}>
                   Contact Now
                 </motion.button>
+
+                {/* ── ONLY THIS BUTTON'S onClick WAS CHANGED ── */}
                 <motion.button whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
-                  onClick={() => navigate('/register')}
+                  onClick={() => {
+                    if (currentUser?.role === 'client') {
+                      navigate(`/book-consultation/${lawyer.id}`);
+                    } else if (currentUser?.role === 'advisor') {
+                      alert('Only clients can book consultations.');
+                    } else {
+                      navigate('/login');
+                    }
+                  }}
                   className="btn-outline"
                   style={{ padding: '10px 24px', background: 'transparent', color: d ? '#c8ddf5' : '#0a1628', border: d ? '1px solid #2d4a6e' : '1px solid #c5d5e8', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', fontFamily: 'Inter, sans-serif', transition: 'background 0.2s' }}>
                   Book Consultation
@@ -344,7 +355,6 @@ const LawyerProfile = () => {
         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}
           style={{ background: d ? '#0d1f3c' : '#ffffff', border: d ? '1px solid #1e3a5f' : '1px solid #dde5ef', borderRadius: 16, padding: '28px', marginBottom: 20 }}>
 
-          {/* Reviews Header */}
           <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12, marginBottom: 24 }}>
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>

@@ -1,4 +1,5 @@
 const axios = require('axios');
+require('dotenv').config();
 
 const SYSTEM_PROMPT = `You are an AI Legal Assistant for Civic Circle, an Indian legal assistance platform built to help common people — especially from rural areas — access legal knowledge easily.
 
@@ -44,23 +45,21 @@ TOPICS YOU CAN HELP WITH:
 - RTI (Right to Information)
 - Constitutional rights of Indian citizens`;
 
+// REGULAR CHAT
 const chat = async (req, res) => {
   const { message, conversationHistory } = req.body;
 
-  // Basic input validation
   if (!message || message.trim() === '') {
     return res.status(400).json({ message: 'Message is required.' });
   }
 
   if (!process.env.GEMINI_API_KEY) {
-    console.error('GEMINI_API_KEY is not set in environment variables.');
     return res.status(500).json({ message: 'Server configuration error: Missing API key.' });
   }
 
   try {
     const contents = [];
 
-    // Add conversation history (max last 10 turns to avoid token overflow)
     if (conversationHistory && conversationHistory.length > 0) {
       const recentHistory = conversationHistory.slice(-10);
       recentHistory.forEach(msg => {
@@ -71,20 +70,17 @@ const chat = async (req, res) => {
       });
     }
 
-    // Add current user message
     contents.push({
       role: 'user',
       parts: [{ text: message }]
     });
 
-    // ✅ FIX 1: Correct model name — gemini-2.0-flash-001
-    // ✅ FIX 2: systemInstruction requires a `role: "user"` wrapper
     const response = await axios.post(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
       {
-        contents: contents,
+        contents,
         systemInstruction: {
-          role: 'user',                          // ✅ required field
+          role: 'user',
           parts: [{ text: SYSTEM_PROMPT }]
         },
         generationConfig: {
@@ -94,20 +90,17 @@ const chat = async (req, res) => {
       },
       {
         headers: { 'Content-Type': 'application/json' },
-        timeout: 15000  // 15 second timeout — prevents hanging requests
+        timeout: 15000
       }
     );
 
-    // ✅ FIX 3: Safe extraction with fallback
     const candidates = response.data?.candidates;
     if (!candidates || candidates.length === 0) {
-      console.error('No candidates returned from Gemini:', response.data);
       return res.status(500).json({ message: 'AI returned an empty response. Please try again.' });
     }
 
     const assistantMessage = candidates[0]?.content?.parts?.[0]?.text;
     if (!assistantMessage) {
-      console.error('Could not extract text from Gemini response:', JSON.stringify(response.data));
       return res.status(500).json({ message: 'AI response format unexpected. Please try again.' });
     }
 
@@ -121,30 +114,101 @@ const chat = async (req, res) => {
     });
 
   } catch (error) {
-    // ✅ FIX 4: Detailed error logging so you can debug from server logs
     if (error.response) {
-      console.error('Gemini API Error Status:', error.response.status);
-      console.error('Gemini API Error Data:', JSON.stringify(error.response.data, null, 2));
-
-      // Specific user-facing messages for common errors
-      if (error.response.status === 400) {
-        return res.status(400).json({ message: 'Invalid request to AI service. Check your message and try again.' });
-      }
-      if (error.response.status === 403) {
-        return res.status(500).json({ message: 'AI service authentication failed. Check your GEMINI_API_KEY.' });
-      }
+      console.error('Gemini API Error:', error.response.status, JSON.stringify(error.response.data));
       if (error.response.status === 429) {
         return res.status(429).json({ message: 'AI service is busy. Please wait a moment and try again.' });
       }
-    } else if (error.code === 'ECONNABORTED') {
-      console.error('Gemini API request timed out.');
-      return res.status(504).json({ message: 'AI service timed out. Please try again.' });
-    } else {
-      console.error('Unexpected error:', error.message);
     }
-
     return res.status(500).json({ message: 'AI service error. Please try again later.' });
   }
 };
 
-module.exports = { chat };
+// DOCUMENT ANALYZER — using REST API directly instead of SDK
+const analyzeDocument = async (req, res) => {
+  const { language } = req.body;
+
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: 'No document uploaded!' });
+    }
+
+    const fileBuffer = req.file.buffer;
+    const mimeType = req.file.mimetype;
+    const base64Data = fileBuffer.toString('base64');
+
+    const languageInstruction = language && language !== 'en'
+      ? `IMPORTANT: Explain everything in ${language} language. The user understands ${language} better than English.`
+      : 'Explain in simple English.';
+
+    const prompt = `You are a legal document analyzer for Civic Circle, an Indian legal assistance platform.
+
+${languageInstruction}
+
+Please analyze this legal document and provide:
+1. Document Type — What type of legal document is this?
+2. Summary — What is this document about in simple words?
+3. Key Points — List the most important points in simple language
+4. Important Dates — Any deadlines or important dates mentioned
+5. Action Required — What does the person receiving this document need to do?
+6. Rights — What are the person rights regarding this document?
+7. Warning — Any concerning clauses or things to be careful about
+8. Recommendation — Should they consult a lawyer? What type?
+
+Use very simple language that a common person from rural India can understand. Avoid complex legal jargon.`;
+
+    const response = await axios.post(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`,
+      {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType: mimeType,
+                  data: base64Data
+                }
+              },
+              {
+                text: prompt
+              }
+            ]
+          }
+        ],
+        generationConfig: {
+          temperature: 0.4,
+          maxOutputTokens: 2048,
+        }
+      },
+      {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 30000
+      }
+    );
+
+    const candidates = response.data?.candidates;
+    if (!candidates || candidates.length === 0) {
+      return res.status(500).json({ message: 'AI returned empty response. Please try again.' });
+    }
+
+    const analysis = candidates[0]?.content?.parts?.[0]?.text;
+    if (!analysis) {
+      return res.status(500).json({ message: 'Could not extract analysis. Please try again.' });
+    }
+
+    res.status(200).json({
+      message: 'Document analyzed successfully!',
+      analysis
+    });
+
+  } catch (error) {
+    console.error('Document Analysis Error:', error.response?.data || error.message);
+    if (error.response?.status === 429) {
+      return res.status(429).json({ message: 'AI service is busy. Please wait a moment and try again.' });
+    }
+    res.status(500).json({ message: 'Error analyzing document. Please try again!', error: error.message });
+  }
+};
+
+module.exports = { chat, analyzeDocument };

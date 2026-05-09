@@ -161,8 +161,9 @@ const ClientDashboard = () => {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
             {[
               { icon: '🔍', title: 'Find a Lawyer', desc: 'Search verified legal advisors', action: () => navigate('/search') },
-              { icon: '🤖', title: 'AI Legal Assistant', desc: 'Get instant legal guidance', action: () => navigate('/ai-chat') },
-              { icon: '📝', title: 'Legal Blogs', desc: 'Read legal articles and guides', action: () => navigate('/blogs') },
+{ icon: '🤖', title: 'AI Legal Assistant', desc: 'Get instant legal guidance & analyze documents', action: () => navigate('/ai-chat') },
+{ icon: '📝', title: 'Legal Blogs', desc: 'Read legal articles and guides', action: () => navigate('/blogs') },
+{ icon: '📄', title: 'Document Analyzer', desc: 'Upload and analyze any legal document', action: () => navigate('/ai-chat') },
             ].map((item, index) => (
               <motion.div
                 key={index}
